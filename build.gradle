@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.github.pray.fff'
-version = '0.0.7'
+version = '0.0.8'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -45,7 +45,7 @@ tasks {
     
     patchPluginXml {
         sinceBuild = "242"  // 更新为 2024.2 对应的 build number
-        untilBuild = "433.*"
+        untilBuild = null  // 移除 untilBuild 以兼容未来版本，或设置为当前最新版本
         pluginDescription = '''
         <p>A Git branch merging plugin that simplifies your Git workflow by providing one-click branch merging capabilities.</p>
         <br>
@@ -54,11 +54,21 @@ tasks {
             <li>One-click merge operation from current branch to target branch</li>
             <li>Automatic branch switching before and after merge</li>
             <li>Automatic push to remote repository after successful merge</li>
-             <li>Smart conflict detection and notification</li>
+            <li>Smart conflict detection and notification</li>
             <li>Convenient branch selection dialog</li>
-             <li>Supports both local and remote branch operations</li>
+            <li>Automatically remember the last selected target branch for convenient repeated operations</li>
+            <li>Support setting default branch (click the star icon in the branch list) for quick selection</li>
+            <li>Supports both local and remote branch operations</li>
         </ul>
         <p>This plugin helps developers save time by automating the common Git merge workflow steps.</p>
+        '''
+        changeNotes = '''
+        <h3>Version 0.0.8</h3>
+        <ul>
+            <li><b>New Feature:</b> Automatically remember the last selected target branch for convenient repeated operations</li>
+            <li><b>New Feature:</b> Support setting default branch (click the star icon in the branch list) for quick selection of frequently used branches</li>
+            <li><img src="https://raw.githubusercontent.com/ApexGust/git-merge-target/main/src/main/resources/META-INF/set_default_branch.png" alt="Set Default Branch Feature" width="600"/></li>
+        </ul>
         '''
     }
 

@@ -12,6 +12,8 @@
         - Automatic push to remote repository after successful merge
         - Smart conflict detection and notification
         - Convenient branch selection dialog
+        - Automatically remember the last selected target branch for convenient repeated operations
+        - Support setting default branch (click the star icon in the branch list) for quick selection
         - Supports both local and remote branch operations
         
         This plugin helps developers save time by automating the common Git merge workflow steps.
@@ -20,6 +22,15 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.vcs</depends>
     <depends>Git4Idea</depends>
+
+    <change-notes><![CDATA[
+        <h3>Version 0.0.8</h3>
+        <ul>
+            <li><b>New Feature:</b> Automatically remember the last selected target branch for convenient repeated operations</li>
+            <li><b>New Feature:</b> Support setting default branch (click the star icon in the branch list) for quick selection of frequently used branches</li>
+            <li><img src="https://raw.githubusercontent.com/ApexGust/git-merge-target/main/src/main/resources/META-INF/set_default_branch.png" alt="Set Default Branch Feature" width="600"/></li>
+        </ul>
+    ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- 在这里添加 Notification Group -->
@@ -37,7 +48,8 @@
         <action id="MergeToTargetBranch" 
                 class="com.github.pray.fff.MergeToTargetBranchAction" 
                 text="Merge to Target Branch" 
-                description="Merge current branch to target branch and push to remote without switching branches">
+                description="Merge current branch to target branch and push to remote without switching branches"
+                icon="/META-INF/icon.svg">
             <add-to-group group-id="Git.Menu" anchor="after" relative-to-action="Git.Commit.And.Push.Executor"/>
             <add-to-group group-id="VcsGroups" anchor="last"/>
             <!-- Windows/Linux 快捷键 -->

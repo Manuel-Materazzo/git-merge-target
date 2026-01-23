@@ -3,11 +3,8 @@ package com.github.pray.fff;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -92,12 +89,9 @@ public class MergeToTargetBranchAction extends AnAction {
                     boolean hasConflict = GitOperations.mergeBranch(project, repository, originalBranch, targetBranch);
                     
                     if (hasConflict) {
-                        // 检测到冲突，自动打开冲突解决面板
+                        // 检测到冲突，刷新状态并提示用户
                         ApplicationManager.getApplication().invokeLater(() -> {
-                            showNotification(project, "合并冲突", 
-                                   String.format("合并 %s 到 %s 时发生冲突，已停留在目标分支。请手动解决冲突！", originalBranch, targetBranch),
-                                   NotificationType.WARNING);
-                            openConflictResolver(project, repository);
+                            openConflictResolver(project, repository, originalBranch, targetBranch);
                         });
                     } else {
                         ApplicationManager.getApplication().invokeLater(() -> 
@@ -125,7 +119,8 @@ public class MergeToTargetBranchAction extends AnAction {
     /**
      * 打开冲突解决面板
      */
-    private void openConflictResolver(@NotNull Project project, @NotNull GitRepository repository) {
+    private void openConflictResolver(@NotNull Project project, @NotNull GitRepository repository, 
+                                     String originalBranch, String targetBranch) {
         try {
             // 先刷新文件系统，确保 IDE 识别到冲突文件
             VirtualFile root = repository.getRoot();
@@ -137,52 +132,13 @@ public class MergeToTargetBranchAction extends AnAction {
             // 等待一小段时间让 IDE 处理刷新
             Thread.sleep(500);
             
-            // 尝试使用ActionManager来触发冲突解决相关的action
-            ActionManager actionManager = ActionManager.getInstance();
-            
-            // 尝试多个可能的action ID
-            String[] possibleActionIds = {
-                "Git.ResolveConflicts",
-                "Vcs.ResolveConflicts", 
-                "Git.Merge",
-                "Vcs.Merge"
-            };
-            
-            AnAction targetAction = null;
-            String foundActionId = null;
-            for (String actionId : possibleActionIds) {
-                targetAction = actionManager.getAction(actionId);
-                if (targetAction != null) {
-                    foundActionId = actionId;
-                    logger.info("找到冲突解决action: {}", actionId);
-                    break;
-                }
-            }
-            
-            if (targetAction != null) {
-                // 创建DataContext来传递project信息
-                DataContext dataContext = new DataContext() {
-                    @Override
-                    public Object getData(String dataId) {
-                        if (CommonDataKeys.PROJECT.is(dataId)) {
-                            return project;
-                        }
-                        return null;
-                    }
-                };
-                
-                AnActionEvent event = AnActionEvent.createFromAnAction(
-                    targetAction, null, ActionPlaces.UNKNOWN, dataContext
-                );
-                targetAction.actionPerformed(event);
-                logger.info("已触发冲突解决action: {}", foundActionId);
-            } else {
-                // 如果找不到action，提示用户手动打开
-                logger.warn("未找到冲突解决action，提示用户手动打开");
-                showNotification(project, "提示", 
-                       "检测到冲突，请通过 VCS -> Git -> Resolve Conflicts 手动打开冲突解决面板", 
-                       NotificationType.INFORMATION);
-            }
+            // 发送合并后的通知，包含完整信息
+            String message = String.format(
+                "合并 %s 到 %s 时发生冲突，已停留在目标分支。请通过手动Resolve Conflicts后再提交。",
+                originalBranch, targetBranch
+            );
+            showNotification(project, "合并冲突", message, NotificationType.WARNING);
+            logger.info("检测到冲突，已提示用户手动打开冲突解决面板");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.error("等待刷新时被中断", e);
