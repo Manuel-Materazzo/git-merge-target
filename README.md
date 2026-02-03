@@ -8,6 +8,7 @@
 - 推送到远端同名分支
 - 自动切回原分支
 
+
 release 版本
 
 - 0.0.1  https://github.com/pythonpray/git-merge-target/releases/tag/verion-0.0.1
@@ -19,3 +20,7 @@ release 版本
 ## 版本
 其实后面2个版本和之前的版本没有任何区别,只是IDEA升级了版本,插件要对应改下版本.
 直接手动下载后,从磁盘安装.就不用管版本的问题了
+
+## vscode同款插件：
+https://open-vsx.org/extension/prayfff/git-merge-into-target
+或者 在vscode/cursor插件商店搜索 git-merge-into-target
