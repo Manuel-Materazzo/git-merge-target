@@ -49,7 +49,7 @@
                 class="com.github.pray.fff.MergeToTargetBranchAction" 
                 text="Merge to Target Branch" 
                 description="Merge current branch to target branch and optionally push to remote without switching branches"
-                icon="/META-INF/icon.svg">
+                icon="AllIcons.Vcs.Merge">
             <add-to-group group-id="MainToolbarVCSGroup" anchor="after" relative-to-action="main.toolbar.git.MergeRebase"/>
             <add-to-group group-id="Git.MainMenu" anchor="after" relative-to-action="Git.Merge"/>
             <!-- Windows/Linux 快捷键 -->
