@@ -33,14 +33,14 @@
     ]]></change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- 在这里添加 Notification Group -->
+        <!-- Add Notification Group here -->
         <notificationGroup id="MergeToTargetBranch.Notifications" displayType="BALLOON" />
         <!--
-            displayType 可以是:
-            - BALLOON: 标准的右下角气泡通知
-            - STICKY_BALLOON: 粘性气泡，需要手动关闭
-            - TOOL_WINDOW: 在指定的 Tool Window 中显示 (需要 toolWindowId 属性)
-            - NONE: 不显示，只记录日志
+            displayType can be:
+            - BALLOON: Standard bottom-right balloon notification
+            - STICKY_BALLOON: Sticky balloon, needs to be closed manually
+            - TOOL_WINDOW: Show in the specified Tool Window (requires toolWindowId attribute)
+            - NONE: Do not show, only log
         -->
     </extensions>
     
@@ -52,9 +52,9 @@
                 icon="AllIcons.Vcs.Merge">
             <add-to-group group-id="MainToolbarVCSGroup" anchor="after" relative-to-action="main.toolbar.git.MergeRebase"/>
             <add-to-group group-id="Git.MainMenu" anchor="after" relative-to-action="Git.Merge"/>
-            <!-- Windows/Linux 快捷键 -->
+            <!-- Windows/Linux shortcut -->
             <keyboard-shortcut first-keystroke="control alt M" keymap="$default"/>
-            <!-- macOS 快捷键 -->
+            <!-- macOS shortcut -->
             <keyboard-shortcut first-keystroke="shift meta alt M" keymap="Mac OS X 10.5+"/>
         </action>
     </actions>

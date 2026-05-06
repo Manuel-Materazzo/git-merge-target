@@ -1,15 +1,15 @@
-## 一键将当前分支合并到目标分支并推送到远程仓库,并切回到当前分支,避免来回切换分支的繁琐步骤
+## One-click merge the current branch into the target branch, push to remote repository, and switch back to the current branch, avoiding the tedious steps of switching branches back and forth.
 
-自动执行以下操作：
+Automatically performs the following operations:
 
-- 自动切换到目标分支
-- git pull远端同名分支
-- git merge合并当前分支
-- 推送到远端同名分支
-- 自动切回原分支
+- Automatically switch to the target branch
+- git pull from the remote branch with the same name
+- git merge the current branch
+- Push to the remote branch with the same name
+- Automatically switch back to the original branch
 
 
-release 版本
+Release versions
 
 - 0.0.1  https://github.com/pythonpray/git-merge-target/releases/tag/verion-0.0.1
 - 0.0.2  https://github.com/pythonpray/git-merge-target/releases/tag/version-0.0.2
@@ -17,10 +17,10 @@ release 版本
 - 0.0.5  https://github.com/pythonpray/git-merge-target/releases/tag/version-0.0.5
 
 
-## 版本
-其实后面2个版本和之前的版本没有任何区别,只是IDEA升级了版本,插件要对应改下版本.
-直接手动下载后,从磁盘安装.就不用管版本的问题了
+## Versions
+Actually, the last two versions are no different from the previous versions, except that IDEA has been upgraded, and the plugin version needs to be updated accordingly.
+Install directly from disk after manual download, then you don't have to worry about version issues.
 
-## vscode同款插件：
+## Similar plugin for VSCode:
 https://open-vsx.org/extension/prayfff/git-merge-into-target
-或者 在vscode/cursor插件商店搜索 git-merge-into-target
+Or search for "git-merge-into-target" in the VSCode/Cursor extension marketplace.
