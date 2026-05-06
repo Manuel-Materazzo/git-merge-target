@@ -69,24 +69,25 @@ public class MergeToTargetBranchAction extends AnAction {
         
         if (dialog.showAndGet()) {
             String selectedBranch = dialog.getSelectedBranch();
+            boolean shouldPush = dialog.shouldPush();
             if (selectedBranch != null) {
                 // 逻辑保持不变：如果没有手动设置默认，则记住当前选择
                 if (!BranchPreferenceHelper.hasManualDefaultBranch(project)) {
                     BranchPreferenceHelper.setAutoRememberBranch(project, selectedBranch);
                 }
-                executeMergeTask(project, repository, selectedBranch, currentBranch);
+                executeMergeTask(project, repository, selectedBranch, currentBranch, shouldPush);
             }
         }
     }
 
-    private void executeMergeTask(Project project, GitRepository repository, String targetBranch, String originalBranch) {
+    private void executeMergeTask(Project project, GitRepository repository, String targetBranch, String originalBranch, boolean shouldPush) {
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Merging Branches") {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
                     indicator.setIndeterminate(false);
                     indicator.setText("Starting merge process...");
-                    boolean hasConflict = GitOperations.mergeBranch(project, repository, originalBranch, targetBranch);
+                    boolean hasConflict = GitOperations.mergeBranch(project, repository, originalBranch, targetBranch, shouldPush);
                     
                     if (hasConflict) {
                         // 检测到冲突，刷新状态并提示用户
@@ -271,6 +272,7 @@ public class MergeToTargetBranchAction extends AnAction {
 
     private static class BranchSelectionDialog extends DialogWrapper {
         private final ComboBox<String> branchComboBox;
+        private final JCheckBox pushCheckBox;
         private final Project project;
         private final List<String> branches;
         private final BranchListCellRenderer cellRenderer;
@@ -282,6 +284,7 @@ public class MergeToTargetBranchAction extends AnAction {
             this.branches = branches;
             
             branchComboBox = new ComboBox<>(branches.toArray(new String[0]));
+            pushCheckBox = new JCheckBox("Merge 后自动 Push 到远程仓库", true);
             cellRenderer = new BranchListCellRenderer(project);
             branchComboBox.setRenderer(cellRenderer);
 
@@ -400,14 +403,22 @@ public class MergeToTargetBranchAction extends AnAction {
 
         @Override
         protected @Nullable JComponent createCenterPanel() {
-            JPanel panel = new JPanel(new BorderLayout(0, 5));
-            panel.add(new JLabel("选择目标分支:"), BorderLayout.NORTH);
-            panel.add(branchComboBox, BorderLayout.CENTER);
+            JPanel panel = new JPanel(new BorderLayout(0, 10));
+            
+            JPanel topPanel = new JPanel(new BorderLayout(0, 5));
+            topPanel.add(new JLabel("选择目标分支:"), BorderLayout.NORTH);
+            topPanel.add(branchComboBox, BorderLayout.CENTER);
+            
+            panel.add(topPanel, BorderLayout.NORTH);
+            panel.add(pushCheckBox, BorderLayout.CENTER);
+            
             // 设置对话框宽度
             panel.setPreferredSize(new Dimension(400, panel.getPreferredSize().height));
             return panel;
         }
 
         public String getSelectedBranch() { return (String) branchComboBox.getSelectedItem(); }
+        
+        public boolean shouldPush() { return pushCheckBox.isSelected(); }
     }
 }

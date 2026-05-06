@@ -30,7 +30,8 @@ public class GitOperations {
     public static boolean mergeBranch(@NotNull Project project,
                                  @NotNull GitRepository repository,
                                  String sourceBranch,
-                                 String targetBranch) throws GitCommandException {
+                                 String targetBranch,
+                                 boolean shouldPush) throws GitCommandException {
         VirtualFile root = repository.getRoot();
         Git git = Git.getInstance();
 
@@ -86,7 +87,9 @@ public class GitOperations {
             }
 
             // 4. 推送
-            runGitCommand(project, root, GitCommand.PUSH, "推送代码", remoteName, targetBranch);
+            if (shouldPush) {
+                runGitCommand(project, root, GitCommand.PUSH, "推送代码", remoteName, targetBranch);
+            }
 
             // 5. 切回源分支（失败不抛异常，只记录）
             try {
