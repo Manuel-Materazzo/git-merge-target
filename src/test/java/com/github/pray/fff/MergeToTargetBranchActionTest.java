@@ -1,5 +1,5 @@
 package com.github.pray.fff;
 
 public class MergeToTargetBranchActionTest {
-    // ... 测试代码 ...
+    // ... Test code ...
 } 

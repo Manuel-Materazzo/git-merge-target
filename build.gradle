@@ -21,7 +21,7 @@ repositories {
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity('2024.2')
-        // Git 插件（包含所需的 VCS 依赖）
+        // Git plugin (contains required VCS dependencies)
         bundledPlugin('Git4Idea')
     }
     testImplementation platform('org.junit:junit-bom:5.10.0')
@@ -44,8 +44,8 @@ tasks {
     }
     
     patchPluginXml {
-        sinceBuild = "242"  // 更新为 2024.2 对应的 build number
-        untilBuild = null  // 移除 untilBuild 以兼容未来版本，或设置为当前最新版本
+        sinceBuild = "242"  // Update to build number corresponding to 2024.2
+        untilBuild = null  // Remove untilBuild for future version compatibility, or set to current latest version
         pluginDescription = '''
         <p>A Git branch merging plugin that simplifies your Git workflow by providing one-click branch merging capabilities.</p>
         <br>

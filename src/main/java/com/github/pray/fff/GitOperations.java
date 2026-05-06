@@ -24,8 +24,8 @@ public class GitOperations {
     }
 
     /**
-     * 合并分支
-     * @return 如果发生冲突返回true，否则返回false
+     * Merge branch
+     * @return true if conflict occurs, false otherwise
      */
     public static boolean mergeBranch(@NotNull Project project,
                                  @NotNull GitRepository repository,
@@ -35,19 +35,19 @@ public class GitOperations {
         VirtualFile root = repository.getRoot();
         Git git = Git.getInstance();
 
-        logger.info("开始合并分支: {} -> {} (Root: {})", sourceBranch, targetBranch, root.getPath());
+        logger.info("Start merging branch: {} -> {} (Root: {})", sourceBranch, targetBranch, root.getPath());
 
-        // 获取远程仓库名称（默认使用 origin，如果不存在则使用第一个远程）
+        // Get remote repository name (default to origin, use first remote if not exists)
         String remoteName = getRemoteName(repository);
 
         try {
-            // 1. 切换到目标分支
-            runGitCommand(project, root, GitCommand.CHECKOUT, "切换分支", targetBranch);
+            // 1. Checkout target branch
+            runGitCommand(project, root, GitCommand.CHECKOUT, "Checkout branch", targetBranch);
 
-            // 2. 拉取代码
-            runGitCommand(project, root, GitCommand.PULL, "拉取代码", remoteName, targetBranch);
+            // 2. Pull code
+            runGitCommand(project, root, GitCommand.PULL, "Pull code", remoteName, targetBranch);
 
-            // 3. 合并
+            // 3. Merge
             boolean hasConflict = false;
             GitCommandResult mergeResult = null;
             try {
@@ -56,66 +56,66 @@ public class GitOperations {
                 mergeResult = git.runCommand(mergeHandler);
                 
                 if (!mergeResult.success()) {
-                    // 检查是否是冲突导致的失败
+                    // Check if failure is caused by conflict
                     String errorOutput = mergeResult.getErrorOutputAsJoinedString();
                     if (isMergeConflict(errorOutput)) {
-                        logger.warn("合并时发生冲突: {}", errorOutput);
+                        logger.warn("Conflict occurred during merge: {}", errorOutput);
                         hasConflict = true;
                     } else {
-                        // 不是冲突，抛出异常
-                        throw new GitCommandException("合并分支失败: " + errorOutput);
+                        // Not a conflict, throw exception
+                        throw new GitCommandException("Failed to merge branch: " + errorOutput);
                     }
                 }
             } catch (GitCommandException e) {
-                // 如果已经检测到冲突，不重新抛出
+                // If conflict is already detected, do not rethrow
                 if (!hasConflict) {
                     throw e;
                 }
             }
             
-            // 即使merge命令返回成功，也要检查是否有未解决的冲突文件
+            // Even if merge command returns success, check for unresolved conflict files
             if (!hasConflict) {
                 hasConflict = checkForUnmergedFiles(project, root, git);
             }
 
-            // 如果有冲突，刷新仓库状态并返回
+            // If there are conflicts, refresh repository status and return
             if (hasConflict) {
-                logger.info("检测到冲突，停止合并流程，停留在目标分支: {}", targetBranch);
-                // 执行 git status 来刷新 IDE 的仓库状态
+                logger.info("Conflict detected, stop merge process, stay on target branch: {}", targetBranch);
+                // Execute git status to refresh IDE repository status
                 refreshRepositoryStatus(project, root, git);
                 return true;
             }
 
-            // 4. 推送
+            // 4. Push
             if (shouldPush) {
-                runGitCommand(project, root, GitCommand.PUSH, "推送代码", remoteName, targetBranch);
+                runGitCommand(project, root, GitCommand.PUSH, "Push code", remoteName, targetBranch);
             }
 
-            // 5. 切回源分支（失败不抛异常，只记录）
+            // 5. Checkout back to source branch (do not throw exception on failure, just log)
             try {
                 GitLineHandler checkoutBack = new GitLineHandler(project, root, GitCommand.CHECKOUT);
                 checkoutBack.addParameters(sourceBranch);
                 GitCommandResult result = git.runCommand(checkoutBack);
                 if (!result.success()) {
-                    logger.warn("切回源分支失败: {}", result.getErrorOutputAsJoinedString());
+                    logger.warn("Failed to switch back to source branch: {}", result.getErrorOutputAsJoinedString());
                 }
             } catch (Exception e) {
-                logger.warn("切回源分支时发生异常", e);
+                logger.warn("Exception occurred when switching back to source branch", e);
             }
 
-            logger.info("合并完成: {} -> {}", sourceBranch, targetBranch);
+            logger.info("Merge completed: {} -> {}", sourceBranch, targetBranch);
             return false;
 
         } catch (GitCommandException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("未预期的错误", e);
-            throw new GitCommandException("内部错误: " + e.getMessage());
+            logger.error("Unexpected error", e);
+            throw new GitCommandException("Internal error: " + e.getMessage());
         }
     }
 
     /**
-     * 检查错误消息是否表示合并冲突
+     * Check if error message indicates merge conflict
      */
     private static boolean isMergeConflict(String errorMessage) {
         if (errorMessage == null) {
@@ -123,14 +123,13 @@ public class GitOperations {
         }
         String lowerMsg = errorMessage.toLowerCase();
         return lowerMsg.contains("conflict") || 
-               lowerMsg.contains("冲突") ||
                lowerMsg.contains("merge conflict") ||
                lowerMsg.contains("unmerged") ||
                lowerMsg.contains("automatic merge failed");
     }
 
     /**
-     * 检查是否有未解决的冲突文件
+     * Check for unresolved conflict files
      */
     private static boolean checkForUnmergedFiles(@NotNull Project project, 
                                                   @NotNull VirtualFile root, 
@@ -142,17 +141,17 @@ public class GitOperations {
             
             if (result.success()) {
                 String output = result.getOutputAsJoinedString();
-                // 检查是否有未合并的文件（以"UU"、"AA"、"DD"等开头的行表示冲突）
+                // Check for unmerged files (lines starting with "UU", "AA", "DD" etc. indicate conflict)
                 if (output != null && !output.trim().isEmpty()) {
                     String[] lines = output.split("\n");
                     for (String line : lines) {
                         if (line.length() >= 2) {
                             char status1 = line.charAt(0);
                             char status2 = line.charAt(1);
-                            // UU, AA, DD, AU, UA, DU, UD 等表示冲突
+                            // UU, AA, DD, AU, UA, DU, UD etc. indicate conflict
                             if ((status1 == 'U' || status1 == 'A' || status1 == 'D') &&
                                 (status2 == 'U' || status2 == 'A' || status2 == 'D')) {
-                                logger.info("检测到未解决的冲突文件: {}", line);
+                                logger.info("Unresolved conflict file detected: {}", line);
                                 return true;
                             }
                         }
@@ -160,57 +159,57 @@ public class GitOperations {
                 }
             }
         } catch (Exception e) {
-            logger.warn("检查冲突文件状态时出错", e);
+            logger.warn("Error checking conflict file status", e);
         }
         return false;
     }
 
     /**
-     * 刷新仓库状态，让 IDE 识别最新的冲突状态
+     * Refresh repository status to let IDE recognize latest conflict status
      */
     private static void refreshRepositoryStatus(@NotNull Project project,
                                                 @NotNull VirtualFile root,
                                                 @NotNull Git git) {
         try {
-            logger.info("刷新仓库状态以更新 IDE 冲突检测");
-            // 执行 git status 来刷新状态
+            logger.info("Refresh repository status to update IDE conflict detection");
+            // Execute git status to refresh status
             GitLineHandler statusHandler = new GitLineHandler(project, root, GitCommand.STATUS);
             GitCommandResult result = git.runCommand(statusHandler);
             if (result.success()) {
-                logger.info("仓库状态刷新成功");
+                logger.info("Repository status refreshed successfully");
             } else {
-                logger.warn("仓库状态刷新失败: {}", result.getErrorOutputAsJoinedString());
+                logger.warn("Repository status refresh failed: {}", result.getErrorOutputAsJoinedString());
             }
         } catch (Exception e) {
-            logger.warn("刷新仓库状态时出错", e);
+            logger.warn("Error refreshing repository status", e);
         }
     }
 
     /**
-     * 获取远程仓库名称（优先 origin，否则使用第一个远程）
+     * Get remote repository name (prefer origin, otherwise use first remote)
      */
     private static String getRemoteName(@NotNull GitRepository repository) {
         try {
             Collection<GitRemote> remotes = repository.getRemotes();
             if (remotes.isEmpty()) {
-                return "origin"; // 默认值
+                return "origin"; // Default value
             }
-            // 优先使用 origin
+            // Prefer origin
             for (GitRemote remote : remotes) {
                 if ("origin".equals(remote.getName())) {
                     return "origin";
                 }
             }
-            // 否则使用第一个远程
+            // Otherwise use the first remote
             return remotes.iterator().next().getName();
         } catch (Exception e) {
-            logger.warn("无法获取远程仓库列表，使用默认值 origin", e);
+            logger.warn("Unable to get remote repository list, using default value: origin", e);
             return "origin";
         }
     }
 
     /**
-     * 提取通用执行逻辑，减少代码重复
+     * Extract common execution logic to reduce code duplication
      */
     private static void runGitCommand(Project project, VirtualFile root, GitCommand command, 
                                       String actionName, String... parameters) throws GitCommandException {
@@ -223,10 +222,10 @@ public class GitOperations {
 
         if (!result.success()) {
             String errorMsg = result.getErrorOutputAsJoinedString();
-            logger.error("{} 失败: {}", actionName, errorMsg);
-            throw new GitCommandException(actionName + " 失败: " + errorMsg);
+            logger.error("{} failed: {}", actionName, errorMsg);
+            throw new GitCommandException(actionName + " failed: " + errorMsg);
         } else {
-            logger.info("{} 成功", actionName);
+            logger.info("{} succeeded", actionName);
         }
     }
 }

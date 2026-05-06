@@ -44,34 +44,34 @@ public class MergeToTargetBranchAction extends AnAction {
         Project project = e.getProject();
         if (project == null) return;
 
-        // 1. 直接使用 Git API（升级到 2.x 插件后不再需要反射）
+        // 1. Directly use Git API (no longer needs reflection after upgrading to 2.x plugin)
         GitRepositoryManager manager = GitUtil.getRepositoryManager(project);
         List<GitRepository> repositories = manager.getRepositories();
         if (repositories.isEmpty()) {
-            Messages.showErrorDialog(project, "未找到 Git 仓库", "错误");
+            Messages.showErrorDialog(project, "Git repository not found", "Error");
             return;
         }
         GitRepository repository = repositories.get(0);
 
         String currentBranch = repository.getCurrentBranchName();
         if (currentBranch == null) {
-            Messages.showErrorDialog(project, "无法获取当前分支信息", "错误");
+            Messages.showErrorDialog(project, "Unable to get current branch information", "Error");
             return;
         }
 
-        // 获取本地分支列表
+        // Get local branch list
         List<String> branchNames = repository.getBranches().getLocalBranches().stream()
                 .map(GitLocalBranch::getName)
                 .collect(Collectors.toList());
 
-        // 2. 优化：将数据直接传入 Dialog，不在 Dialog 内部再次查询
+        // 2. Optimization: Pass data directly into Dialog, don't query again inside Dialog
         BranchSelectionDialog dialog = new BranchSelectionDialog(project, branchNames);
         
         if (dialog.showAndGet()) {
             String selectedBranch = dialog.getSelectedBranch();
             boolean shouldPush = dialog.shouldPush();
             if (selectedBranch != null) {
-                // 逻辑保持不变：如果没有手动设置默认，则记住当前选择
+                // Logic remains unchanged: if no manual default is set, remember current selection
                 if (!BranchPreferenceHelper.hasManualDefaultBranch(project)) {
                     BranchPreferenceHelper.setAutoRememberBranch(project, selectedBranch);
                 }
@@ -90,27 +90,27 @@ public class MergeToTargetBranchAction extends AnAction {
                     boolean hasConflict = GitOperations.mergeBranch(project, repository, originalBranch, targetBranch, shouldPush);
                     
                     if (hasConflict) {
-                        // 检测到冲突，刷新状态并提示用户
+                        // Conflict detected, refresh status and prompt user
                         ApplicationManager.getApplication().invokeLater(() -> {
                             openConflictResolver(project, repository, originalBranch, targetBranch);
                         });
                     } else {
                         ApplicationManager.getApplication().invokeLater(() -> 
-                            showNotification(project, "合并成功", 
-                                   String.format("成功将 %s 合并到 %s!", originalBranch, targetBranch), 
+                            showNotification(project, "Merge successful", 
+                                   String.format("Successfully merged %s into %s!", originalBranch, targetBranch), 
                                    NotificationType.INFORMATION));
                     }
                 } catch (GitOperations.GitCommandException ex) {
                     logger.warn("Merge operation failed: " + ex.getMessage());
                     ApplicationManager.getApplication().invokeLater(() -> 
-                        showNotification(project, "合并失败", 
-                               "当前分支: " + targetBranch + ". 原因: " + ex.getMessage(), 
+                        showNotification(project, "Merge failed", 
+                               "Current branch: " + targetBranch + ". Reason: " + ex.getMessage(), 
                                NotificationType.WARNING));
                 } catch (Exception ex) {
                     logger.error("Unexpected error during merge", ex);
                     ApplicationManager.getApplication().invokeLater(() -> 
-                        showNotification(project, "合并失败", 
-                               "未预期的错误: " + ex.getMessage(), 
+                        showNotification(project, "Merge failed", 
+                               "Unexpected error: " + ex.getMessage(), 
                                NotificationType.ERROR));
                 }
             }
@@ -118,36 +118,36 @@ public class MergeToTargetBranchAction extends AnAction {
     }
 
     /**
-     * 打开冲突解决面板
+     * Open conflict resolution panel
      */
     private void openConflictResolver(@NotNull Project project, @NotNull GitRepository repository, 
                                      String originalBranch, String targetBranch) {
         try {
-            // 先刷新文件系统，确保 IDE 识别到冲突文件
+            // First refresh file system to ensure IDE recognizes conflict files
             VirtualFile root = repository.getRoot();
             if (root != null) {
                 VfsUtil.markDirtyAndRefresh(false, true, true, root);
-                logger.info("已刷新文件系统以更新冲突状态");
+                logger.info("File system refreshed to update conflict status");
             }
             
-            // 等待一小段时间让 IDE 处理刷新
+            // Wait for a short time for IDE to process refresh
             Thread.sleep(500);
             
-            // 发送合并后的通知，包含完整信息
+            // Send notification after merge with full info
             String message = String.format(
-                "合并 %s 到 %s 时发生冲突，已停留在目标分支。请通过手动Resolve Conflicts后再提交。",
+                "Conflict occurred while merging %s into %s, stayed on target branch. Please manually Resolve Conflicts before committing.",
                 originalBranch, targetBranch
             );
-            showNotification(project, "合并冲突", message, NotificationType.WARNING);
-            logger.info("检测到冲突，已提示用户手动打开冲突解决面板");
+            showNotification(project, "Merge Conflict", message, NotificationType.WARNING);
+            logger.info("Conflict detected, user prompted to manually open conflict resolution panel");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("等待刷新时被中断", e);
+            logger.error("Interrupted while waiting for refresh", e);
         } catch (Exception e) {
-            logger.error("打开冲突解决面板失败", e);
-            // 提示用户手动打开冲突面板
-            showNotification(project, "提示", 
-                   "检测到冲突，请通过 VCS -> Git -> Resolve Conflicts 手动打开冲突解决面板", 
+            logger.error("Failed to open conflict resolution panel", e);
+            // Prompt user to manually open conflict panel
+            showNotification(project, "Prompt", 
+                   "Conflict detected, please manually open conflict resolution panel via VCS -> Git -> Resolve Conflicts", 
                    NotificationType.INFORMATION);
         }
     }
@@ -159,7 +159,7 @@ public class MergeToTargetBranchAction extends AnAction {
                 .notify(project);
     }
 
-    // 3. 优化：提取偏好设置逻辑到静态内部类，减少主类混乱
+    // 3. Optimization: Extract preference logic to static inner class to reduce main class clutter
     private static class BranchPreferenceHelper {
         private static final String MANUAL_DEFAULT_BRANCH_KEY = "MergeToTargetBranch.ManualDefaultBranch";
         private static final String AUTO_REMEMBER_BRANCH_KEY = "MergeToTargetBranch.AutoRememberBranch";
@@ -199,13 +199,13 @@ public class MergeToTargetBranchAction extends AnAction {
         }
     }
 
-    // 4. 优化：CellRenderer 性能优化（组件复用）
+    // 4. Optimization: CellRenderer performance optimization (component reuse)
     private static class BranchListCellRenderer implements ListCellRenderer<String> {
         private final Project project;
         private final DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
         private int hoveredIndex = -1;
 
-        // 预初始化组件，避免在 getListCellRendererComponent 中重复创建
+        // Pre-initialize components to avoid repeated creation in getListCellRendererComponent
         private final JPanel panel = new JPanel(new BorderLayout(5, 0));
         private final JLabel nameLabel = new JLabel();
         private final JLabel starLabel = new JLabel();
@@ -236,10 +236,10 @@ public class MergeToTargetBranchAction extends AnAction {
             boolean isDefault = value.equals(currentManualDefault);
             boolean isHovered = (index == hoveredIndex);
 
-            // 设置文本
+            // Set text
             nameLabel.setText(value);
 
-            // 设置颜色
+            // Set color
             if (isSelected) {
                 panel.setBackground(list.getSelectionBackground());
                 nameLabel.setForeground(list.getSelectionForeground());
@@ -248,17 +248,17 @@ public class MergeToTargetBranchAction extends AnAction {
                 nameLabel.setForeground(list.getForeground());
             }
 
-            // 设置星星状态
+            // Set star status
             if (isInDropdown) {
                 starLabel.setVisible(true);
                 if (isDefault) {
                     starLabel.setText("★");
                     starLabel.setForeground(new Color(255, 200, 0));
-                    starLabel.setToolTipText("默认分支，点击取消");
+                    starLabel.setToolTipText("Default branch, click to cancel");
                 } else if (isHovered || cellHasFocus) {
                     starLabel.setText("☆");
                     starLabel.setForeground(Color.GRAY);
-                    starLabel.setToolTipText("点击设为默认分支");
+                    starLabel.setToolTipText("Click to set as default branch");
                 } else {
                     starLabel.setVisible(false);
                 }
@@ -277,14 +277,14 @@ public class MergeToTargetBranchAction extends AnAction {
         private final List<String> branches;
         private final BranchListCellRenderer cellRenderer;
 
-        // 优化：构造函数接收准备好的数据
+        // Optimization: Constructor receives prepared data
         public BranchSelectionDialog(Project project, List<String> branches) {
             super(project);
             this.project = project;
             this.branches = branches;
             
             branchComboBox = new ComboBox<>(branches.toArray(new String[0]));
-            pushCheckBox = new JCheckBox("Merge 后自动 Push 到远程仓库", true);
+            pushCheckBox = new JCheckBox("Automatically Push to remote after Merge", true);
             cellRenderer = new BranchListCellRenderer(project);
             branchComboBox.setRenderer(cellRenderer);
 
@@ -294,7 +294,7 @@ public class MergeToTargetBranchAction extends AnAction {
             }
 
             setupStarInteraction();
-            setTitle("选择目标分支");
+            setTitle("Select Target Branch");
             init();
         }
 
@@ -309,11 +309,11 @@ public class MergeToTargetBranchAction extends AnAction {
             });
         }
 
-        // 5. 优化：简化的 JList 查找逻辑，递归查找是最稳健的
+        // 5. Optimization: Simplified JList lookup logic, recursive lookup is the most robust
         private void attachMouseListenerToPopupList() {
             JList<?> list = findJListInComponent(branchComboBox);
             if (list == null) {
-                // 尝试查找所有 Window (为了兼容某些 LookAndFeel 的 Popup 实现)
+                // Try to find all Windows (for compatibility with some LookAndFeel Popup implementations)
                 for (Window window : Window.getWindows()) {
                     if (window instanceof Container && window.isShowing()) {
                          list = findJListInComponent((Container) window);
@@ -324,7 +324,7 @@ public class MergeToTargetBranchAction extends AnAction {
             }
 
             if (list != null) {
-                // 清理旧监听器防止重复添加
+                // Clean up old listeners to prevent duplicate additions
                 for (java.awt.event.MouseListener ml : list.getMouseListeners()) {
                     if (ml instanceof StarMouseAdapter) return;
                 }
@@ -345,7 +345,7 @@ public class MergeToTargetBranchAction extends AnAction {
             return null;
         }
 
-        // 确保找到的 List 确实是属于当前 ComboBox 的
+        // Ensure found List indeed belongs to current ComboBox
         private boolean isBelongToComboBox(JList<?> list, JComboBox<?> comboBox) {
             if (comboBox.getItemCount() == 0) return false;
             ListModel<?> model = list.getModel();
@@ -386,7 +386,7 @@ public class MergeToTargetBranchAction extends AnAction {
             private boolean isClickOnStar(MouseEvent e, int index) {
                 Rectangle bounds = list.getCellBounds(index, index);
                 if (bounds == null) return false;
-                // 假设星星在最右侧 30px 区域
+                // Assume star is in the rightmost 30px area
                 return e.getX() > (bounds.x + bounds.width - 30);
             }
         }
@@ -394,10 +394,10 @@ public class MergeToTargetBranchAction extends AnAction {
         private void toggleDefaultBranch(String branchName) {
             if (branchName.equals(BranchPreferenceHelper.getManualDefaultBranch(project))) {
                 BranchPreferenceHelper.clearManualDefaultBranch(project);
-                showNotification(project, "取消成功", "已取消默认分支: " + branchName, NotificationType.INFORMATION);
+                showNotification(project, "Cancellation successful", "Default branch cancelled: " + branchName, NotificationType.INFORMATION);
             } else {
                 BranchPreferenceHelper.setManualDefaultBranch(project, branchName);
-                showNotification(project, "设置成功", "默认分支已设为: " + branchName, NotificationType.INFORMATION);
+                showNotification(project, "Setting successful", "Default branch set to: " + branchName, NotificationType.INFORMATION);
             }
         }
 
@@ -406,13 +406,13 @@ public class MergeToTargetBranchAction extends AnAction {
             JPanel panel = new JPanel(new BorderLayout(0, 10));
             
             JPanel topPanel = new JPanel(new BorderLayout(0, 5));
-            topPanel.add(new JLabel("选择目标分支:"), BorderLayout.NORTH);
+            topPanel.add(new JLabel("Select Target Branch:"), BorderLayout.NORTH);
             topPanel.add(branchComboBox, BorderLayout.CENTER);
             
             panel.add(topPanel, BorderLayout.NORTH);
             panel.add(pushCheckBox, BorderLayout.CENTER);
             
-            // 设置对话框宽度
+            // Set dialog width
             panel.setPreferredSize(new Dimension(400, panel.getPreferredSize().height));
             return panel;
         }
