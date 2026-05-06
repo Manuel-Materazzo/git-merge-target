@@ -9,7 +9,7 @@
         Key Features:
         - One-click merge operation from current branch to target branch
         - Automatic branch switching before and after merge
-        - Automatic push to remote repository after successful merge
+        - Optional push to remote repository after successful merge
         - Smart conflict detection and notification
         - Convenient branch selection dialog
         - Automatically remember the last selected target branch for convenient repeated operations
@@ -48,10 +48,9 @@
         <action id="MergeToTargetBranch" 
                 class="com.github.pray.fff.MergeToTargetBranchAction" 
                 text="Merge to Target Branch" 
-                description="Merge current branch to target branch and push to remote without switching branches"
+                description="Merge current branch to target branch and optionally push to remote without switching branches"
                 icon="/META-INF/icon.svg">
-            <add-to-group group-id="Git.Menu" anchor="after" relative-to-action="Git.Commit.And.Push.Executor"/>
-            <add-to-group group-id="VcsGroups" anchor="last"/>
+            <add-to-group group-id="Vcs.ToolbarWidget.Actions" anchor="last"/>
             <!-- Windows/Linux 快捷键 -->
             <keyboard-shortcut first-keystroke="control alt M" keymap="$default"/>
             <!-- macOS 快捷键 -->
