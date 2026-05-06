@@ -30,13 +30,13 @@ jobs:
           gradle-version: 8.13
 
       - name: Build Plugin
-        run: ./gradlew build --no-daemon
+        run: ./gradlew buildPlugin --no-daemon
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: plugin
-          path: build/libs/*.zip
+          path: build/distributions/*.zip
 
   release:
     name: Release Plugin
@@ -55,12 +55,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: plugin
-          path: build/libs
+          path: build/distributions
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.zip
+          files: build/distributions/*.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
